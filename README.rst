@@ -29,12 +29,12 @@ This will try to install ``pandoc-quotes`` manual page, but this
 will only work on a limited number of systems.
 
 Alternatively, you can also download the source for the `current version
-<https://codeload.github.com/odkr/pandoc-quotes/tar.gz/v0.4.0>`_.
+<https://codeload.github.com/odkr/pandoc-quotes/tar.gz/v0.5.0>`_.
 
 Simlpy run::
 
-    curl https://codeload.github.com/odkr/pandoc-quotes/tar.gz/v0.4.0 | tar -xz
-    cd pandoc-quotes-0.4.0
+    curl https://codeload.github.com/odkr/pandoc-quotes/tar.gz/v0.5.0 | tar -xz
+    cd pandoc-quotes-0.5.0
     python setup.py install
 
 
