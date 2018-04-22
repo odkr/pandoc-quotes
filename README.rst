@@ -15,8 +15,7 @@ See the `manual page <man/pandoc-quotes.rst>`_ for more details.
 Installing ``pandoc-quotes``
 ============================
 
-You use ``pandoc-quotes`` **at your own risk**. What is more, by doing so,
-you agree to this condition. You have been warned.
+You use ``pandoc-quotes`` **at your own risk**. You have been warned.
 
 You need `Python 3.3 <https://www.python.org/>`_.
 
@@ -24,10 +23,10 @@ Simply run::
 
     pip3 install pandoc_quotes
 
-This will also try to install ``pandoc-quotes`` manual page, but this
+This will try to install ``pandoc-quotes`` manual page, but this
 will only work on a limited number of systems.
 
-You can also download the source for the `current stable-ish version
+Alternatively, you can also download the source for the `current version
 <https://codeload.github.com/odkr/pandoc-quotes/tar.gz/v0.4.0>`_.
 
 Simlpy run::
@@ -81,4 +80,4 @@ GitHub:
 <https://github.com/odkr/pandoc-quotes>
 
 PyPI:
-<https://pypi.org/project/pandoc-quotes/>
+<https://pypi.org/project/pandoc-quotes>
