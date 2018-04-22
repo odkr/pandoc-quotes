@@ -102,8 +102,8 @@ class _LangQuoMarkMap(dict):
                  for i in _PANDOC_DATA_DIRS[os.name]]
     """Default pandoc data directories for the current operating."""
 
-    map_files = map(lambda i: os.path.join(i, 'quot-marks.yaml'),
-                    [module_dir] + data_dirs)
+    map_files = [os.path.join(i, 'quot-marks.yaml')
+                 for i in [module_dir] + data_dirs]
     """Where to look for quotion maps."""
 
     def __init__(self):
