@@ -48,8 +48,8 @@ For example::
 
 You always have to set all four quotation marks.
 
-If each quotation mark consists of precisely one character (it may
-span multiple bytes), you can write the list as a simple string.
+If each quotation mark consists of precisely one character,
+you can write the list as a simple string.
 
 For example::
 
