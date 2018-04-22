@@ -7,7 +7,7 @@ Replaces plain quotation marks with typographic ones
 ----------------------------------------------------
 
 :Author: Odin Kroeger
-:Date: April 11, 2018
+:Date: April 22, 2018
 :Version: 0.4.0
 :Manual section: 1
 
@@ -24,24 +24,38 @@ DESCRIPTION
 ``pandoc-quotes`` is a filter for ``pandoc`` that replaces plain, that is,
 non-typographic, quotes with typographic ones.
 
-You can define with which typographic quotation marks to replace plain ones
-by setting either the ``quotation-marks``, the ``quotation-language``, or
-the ``lang`` metadata field.
+You can define which typographic quotation marks to replace plain ones with
+by setting either a document's ``quotation-marks``, ``quotation-language``,
+or ``lang`` metadata field.
 
 
 ``quotation-marks``
 -------------------
 
-The ``quotation-marks`` metadata field should be a list of four strings, where
-the first item lists the primary left quotation mark, the second the primary
-right quotation mark, the third the secondary left quotation mark, and the
-fourth the secondary right quotation mark.
+A list of four strings, where the first item lists the primary left quotation
+mark, the second the primary right quotation mark, the third the secondary
+left quotation mark, and the fourth the secondary right quotation mark.
 
-You always have to set all four quotation marks, even if you do not plan to
-use secondary quotation marks.
+For example::
 
-If each quotation mark consists of precisely one character (it may span
-multiple bytes though), you can write the list as a simple string.
+    ---
+    quotation-marks:
+        - ''
+        - ´´
+        - '
+        - ´
+    ...
+
+You always have to set all four quotation marks.
+
+If each quotation mark consists of precisely one character (it may
+span multiple bytes), you can write the list as a simple string.
+
+For example::
+
+    ---
+    quotation-marks: ""''
+    ...
 
 If ``quotation-marks`` is set, the other fields are ignored.
 
@@ -49,8 +63,15 @@ If ``quotation-marks`` is set, the other fields are ignored.
 ``quotation-lang``
 ------------------
 
-``quotation-lang`` should be an RFC 5646 code for the language the quotation
-marks of which shall be used (e.g., "en-US", "pt-BR", "de", "es").
+An `RFC 5646 <https://tools.ietf.org/html/rfc5646>`_-like code
+for the language the quotation marks of which shall be used
+(e.g., "en-US", "pt-BR", "de", "es").
+
+For example::
+
+    ---
+    quotation-lang: de-AT
+    ...
 
 **Note:** Only the language and the country tags of RFC 5646 are supported.
 So, "it-CH" (i.e., Italian as spoken in Switzerland) is fine, but "it-756"
@@ -70,19 +91,26 @@ what language your reference list should be in. If ``pandoc-citeproc``
 and ``pandoc-quotes`` both support your language, you need not set
 ``quotation-lang``, ``pandoc-quotes`` will use ``lang``, too.
 
+For example::
+
+    ---
+    lang: de-AT
+    ...
+
 
 ADDING LANGUAGES
 ================
 
-You can add quotation marks for unsupported languages or override
-``pandoc-quotes`` default by placing a ``quot-marks.yaml`` file in
-your pandoc data directory. ``quot-marks.yaml`` should be a valid
-`YAML <http://yaml.org/>`_ file, which contains pairs of RFC 5646-ish
-language codes (e.g., "en-US", "pt-BR", "de", "es") and lists of
-quotation marks, in the following order: primary left, primary right,
-secondary left, secondary right. If each quotation mark consists of
-precisely one character (it may span multiple bytes though), you can
-write the list as a simple string.
+You can add quotation marks for unsupported languages, or override the
+defaults of ``pandoc-quotes``, by placing a file named ``quot-marks.yaml``
+in your pandoc data directory.
+
+``quot-marks.yaml`` should be a valid `YAML <http://yaml.org/>`_ file, which
+contains pairs of a `RFC 5646 <https://tools.ietf.org/html/rfc5646>`_-like
+language code (e.g., "en-US", "pt-BR", "de", "es") and a list of quotation
+marks, which are given in the same format as for ``quotation-marks``.
+
+See the ``quot-marks.yaml`` that comes with ``pandoc-quotes`` for an example.
 
 
 CAVEATS
@@ -99,7 +127,7 @@ represent quotes syntactically (e.g., HTML, LaTeX, ConTexT). Also, it should
 be the last or one of the last filters you apply.
 
 Support for quotation styles of different languages is incomplete and likely
-erroneous. See <https://github.com/okroeger/pandoc-quotes> if you'd like to
+erroneous. See <https://github.com/odkr/pandoc-quotes> if you'd like to
 help fix this.
 
 

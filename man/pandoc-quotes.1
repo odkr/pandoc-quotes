@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH PANDOC-QUOTES 1 "April 11, 2018" "0.4.0" ""
+.TH PANDOC-QUOTES 1 "April 22, 2018" "0.4.0" ""
 .SH NAME
 pandoc-quotes \- Replaces plain quotation marks with typographic ones
 .
@@ -38,27 +38,72 @@ pandoc\-quotes [\-h]
 \fBpandoc\-quotes\fP is a filter for \fBpandoc\fP that replaces plain, that is,
 non\-typographic, quotes with typographic ones.
 .sp
-You can define with which typographic quotation marks to replace plain ones
-by setting either the \fBquotation\-marks\fP, the \fBquotation\-language\fP, or
-the \fBlang\fP metadata field.
+You can define which typographic quotation marks to replace plain ones with
+by setting either a document\(aqs \fBquotation\-marks\fP, \fBquotation\-language\fP,
+or \fBlang\fP metadata field.
 .SS \fBquotation\-marks\fP
 .sp
-The \fBquotation\-marks\fP metadata field should be a list of four strings, where
-the first item lists the primary left quotation mark, the second the primary
-right quotation mark, the third the secondary left quotation mark, and the
-fourth the secondary right quotation mark.
+A list of four strings, where the first item lists the primary left quotation
+mark, the second the primary right quotation mark, the third the secondary
+left quotation mark, and the fourth the secondary right quotation mark.
 .sp
-You always have to set all four quotation marks, even if you do not plan to
-use secondary quotation marks.
+For example:
+.INDENT 0.0
+.INDENT 3.5
 .sp
-If each quotation mark consists of precisely one character (it may span
-multiple bytes though), you can write the list as a simple string.
+.nf
+.ft C
+\-\-\-
+quotation\-marks:
+    \- \(aq\(aq
+    \- \'\'
+    \- \(aq
+    \- \'
+\&...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+You always have to set all four quotation marks.
+.sp
+If each quotation mark consists of precisely one character (it may
+span multiple bytes), you can write the list as a simple string.
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\-\-\-
+quotation\-marks: ""\(aq\(aq
+\&...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
 .sp
 If \fBquotation\-marks\fP is set, the other fields are ignored.
 .SS \fBquotation\-lang\fP
 .sp
-\fBquotation\-lang\fP should be an RFC 5646 code for the language the quotation
-marks of which shall be used (e.g., "en\-US", "pt\-BR", "de", "es").
+An \fI\%RFC 5646\fP\-like code
+for the language the quotation marks of which shall be used
+(e.g., "en\-US", "pt\-BR", "de", "es").
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\-\-\-
+quotation\-lang: de\-AT
+\&...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
 .sp
 \fBNote:\fP Only the language and the country tags of RFC 5646 are supported.
 So, "it\-CH" (i.e., Italian as spoken in Switzerland) is fine, but "it\-756"
@@ -74,17 +119,32 @@ The format of \fBlang\fP is the same as for \fBquotation\-lang\fP\&.
 what language your reference list should be in. If \fBpandoc\-citeproc\fP
 and \fBpandoc\-quotes\fP both support your language, you need not set
 \fBquotation\-lang\fP, \fBpandoc\-quotes\fP will use \fBlang\fP, too.
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\-\-\-
+lang: de\-AT
+\&...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
 .SH ADDING LANGUAGES
 .sp
-You can add quotation marks for unsupported languages or override
-\fBpandoc\-quotes\fP default by placing a \fBquot\-marks.yaml\fP file in
-your pandoc data directory. \fBquot\-marks.yaml\fP should be a valid
-\fI\%YAML\fP file, which contains pairs of RFC 5646\-ish
-language codes (e.g., "en\-US", "pt\-BR", "de", "es") and lists of
-quotation marks, in the following order: primary left, primary right,
-secondary left, secondary right. If each quotation mark consists of
-precisely one character (it may span multiple bytes though), you can
-write the list as a simple string.
+You can add quotation marks for unsupported languages, or override the
+defaults of \fBpandoc\-quotes\fP, by placing a file named \fBquot\-marks.yaml\fP
+in your pandoc data directory.
+.sp
+\fBquot\-marks.yaml\fP should be a valid \fI\%YAML\fP file, which
+contains pairs of a \fI\%RFC 5646\fP\-like
+language code (e.g., "en\-US", "pt\-BR", "de", "es") and a list of quotation
+marks, which are given in the same format as for \fBquotation\-marks\fP\&.
+.sp
+See the \fBquot\-marks.yaml\fP that comes with \fBpandoc\-quotes\fP for an example.
 .SH CAVEATS
 .sp
 \fBpandoc\fP represents documents as abstract syntax trees, and quotations are
@@ -98,7 +158,7 @@ represent quotes syntactically (e.g., HTML, LaTeX, ConTexT). Also, it should
 be the last or one of the last filters you apply.
 .sp
 Support for quotation styles of different languages is incomplete and likely
-erroneous. See <\fI\%https://github.com/okroeger/pandoc\-quotes\fP> if you\(aqd like to
+erroneous. See <\fI\%https://github.com/odkr/pandoc\-quotes\fP> if you\(aqd like to
 help fix this.
 .SH LICENSE
 .sp

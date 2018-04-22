@@ -6,8 +6,8 @@ pandoc-quotes
 plain, that is, non-typographic, quotation marks with typographic ones.
 
 You can define which typographic quotation marks to replace plain ones with
-by setting either the ``quotation-marks``, the ``quotation-language``, or
-the ``lang`` metadata field.
+by setting either a document's ``quotation-marks``, ``quotation-language``,
+or ``lang`` metadata field.
 
 See the `manual page <man/pandoc-quotes.rst>`_ for more details.
 
@@ -17,11 +17,13 @@ Installing ``pandoc-quotes``
 
 You use ``pandoc-quotes`` **at your own risk**. You have been warned.
 
-You need `Python 3.3 <https://www.python.org/>`_.
+You need `Python 2.7 <https://www.python.org/>`_ or newer,
+`panflute <https://github.com/sergiocorreia/panflute>`_, and
+`PyYAML <https://github.com/yaml/pyyaml>`_.
 
 Simply run::
 
-    pip3 install pandoc_quotes
+    pip install pandoc_quotes
 
 This will try to install ``pandoc-quotes`` manual page, but this
 will only work on a limited number of systems.
@@ -33,7 +35,7 @@ Simlpy run::
 
     curl https://codeload.github.com/odkr/pandoc-quotes/tar.gz/v0.4.0 | tar -xz
     cd pandoc-quotes-0.4.0
-    python3 setup.py install
+    python setup.py install
 
 
 Documentation
