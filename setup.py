@@ -3,7 +3,7 @@ from os import path
 from setuptools import setup
 
 setup(name='pandoc-quotes',
-      version='0.4.0',
+      version='0.5.0b6',
       description='Pandoc filter that adapts quotation marks.',
       long_description='``pandoc-quotes`` is a filter for '
                        '`pandoc <http://pandoc.org/>`_ that replaces plain, '
@@ -16,13 +16,13 @@ setup(name='pandoc-quotes',
       author='Odin Kroeger',
       author_email='epnzdp@maskr.me',
       license='MIT',
-      python_requires='~=3.3',
+      python_requires='>=2.7,<4',
       packages=['pandoc_quotes'],
       zip_safe=False,
       install_requires=['panflute', 'pyyaml'],
       classifiers=['Development Status :: 4 - Beta',
                    'License :: OSI Approved :: MIT License',
-                   'Programming Language :: Python :: 3',
+                   'Programming Language :: Python :: 2.7',
                    'Environment :: Console',
                    'Operating System :: OS Independent',
                    'Topic :: Text Processing :: Filters'],

@@ -1,3 +1,4 @@
+# encoding=utf-8
 """Sets the right quotes in a Pandoc Abstract Syntax Tree.
 
 Copyright (c) 2018 Odin Kroeger
@@ -56,7 +57,7 @@ class Error(Exception):
                 A dictionary that is used to fill in values
                 in the error message.
         """
-        super().__init__()
+        super(Error, self).__init__()
         self.__dict__.update(**kwargs)
 
     def __str__(self):
@@ -101,13 +102,13 @@ class _LangQuoMarkMap(dict):
                  for i in _PANDOC_DATA_DIRS[os.name]]
     """Default pandoc data directories for the current operating."""
 
-    map_files = [os.path.join(i, 'quot-marks.yaml')
-                 for i in (module_dir, *data_dirs)]
+    map_files = map(lambda i: os.path.join(i, 'quot-marks.yaml'),
+                    [module_dir] + data_dirs)
     """Where to look for quotion maps."""
 
     def __init__(self):
         """Loads all maps."""
-        super().__init__()
+        super(_LangQuoMarkMap, self).__init__()
         for map_file in self.map_files:
             if os.path.exists(map_file):
                 with open(map_file) as map_fh:
@@ -156,7 +157,7 @@ class QuoMarks(tuple):
                 raise QuoMarkNotAStringError()
             if not i.isprintable():
                 raise QuoMarkNotPrintableError()
-        return super().__new__(cls, quo_marks)
+        return tuple.__new__(cls, quo_marks)
 
     ldquo = property(itemgetter(0))
     """Primary left quotation mark."""
@@ -209,7 +210,7 @@ class LangQuoMarks(tuple):
         map_ = _LangQuoMarkMap()
         for i in range(3):
             try:
-                return super().__new__(cls, (*map_[lang], lang))
+                return tuple.__new__(cls, list(map_[lang]) + [lang])
             except KeyError:
                 if i == 0:
                     lang = lang.split('-')[0]
@@ -311,6 +312,6 @@ def replace_quo_marks(elem, marks): # pylint: disable=R1710
     if isinstance(elem, Quoted):
         unquoted = list(elem.content)
         if elem.quote_type == 'SingleQuote':
-            return [Str(marks.lsquo), *unquoted, Str(marks.rsquo)]
+            return [Str(marks.lsquo)] + unquoted + [Str(marks.rsquo)]
         elif elem.quote_type == 'DoubleQuote':
-            return [Str(marks.ldquo), *unquoted, Str(marks.rdquo)]
+            return [Str(marks.ldquo)] + unquoted + [Str(marks.rdquo)]

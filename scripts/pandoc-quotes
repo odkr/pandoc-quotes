@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
+# encoding=utf-8
+# pylint: disable=C0103
 """Pandoc filter that replaces non-typographic quotes with typographic ones.
 
 Copyright (c) 2018 Odin Kroeger
@@ -27,8 +29,8 @@ import sys
 from logging import basicConfig, warning
 from argparse import ArgumentParser
 from os.path import basename
-from pandoc_quotes import QuoMarkReplacer, Error
 from panflute import run_filter
+from pandoc_quotes import QuoMarkReplacer, Error
 
 
 def main(doc=None):
