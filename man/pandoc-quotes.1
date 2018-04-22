@@ -1,0 +1,137 @@
+.\" Man page generated from reStructuredText.
+.
+.TH PANDOC-QUOTES 1 "April 11, 2018" "0.4.0" ""
+.SH NAME
+pandoc-quotes \- Replaces plain quotation marks with typographic ones
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.sp
+pandoc\-quotes [\-h]
+.SH DESCRIPTION
+.sp
+\fBpandoc\-quotes\fP is a filter for \fBpandoc\fP that replaces plain, that is,
+non\-typographic, quotes with typographic ones.
+.sp
+You can define with which typographic quotation marks to replace plain ones
+by setting either the \fBquotation\-marks\fP, the \fBquotation\-language\fP, or
+the \fBlang\fP metadata field.
+.SS \fBquotation\-marks\fP
+.sp
+The \fBquotation\-marks\fP metadata field should be a list of four strings, where
+the first item lists the primary left quotation mark, the second the primary
+right quotation mark, the third the secondary left quotation mark, and the
+fourth the secondary right quotation mark.
+.sp
+You always have to set all four quotation marks, even if you do not plan to
+use secondary quotation marks.
+.sp
+If each quotation mark consists of precisely one character (it may span
+multiple bytes though), you can write the list as a simple string.
+.sp
+If \fBquotation\-marks\fP is set, the other fields are ignored.
+.SS \fBquotation\-lang\fP
+.sp
+\fBquotation\-lang\fP should be an RFC 5646 code for the language the quotation
+marks of which shall be used (e.g., "en\-US", "pt\-BR", "de", "es").
+.sp
+\fBNote:\fP Only the language and the country tags of RFC 5646 are supported.
+So, "it\-CH" (i.e., Italian as spoken in Switzerland) is fine, but "it\-756"
+(also Italian as spoken in Switzerland) will just return the quotation
+marks for "it" (i.e., Italian as spoken in general).
+.sp
+If \fBquotation\-marks\fP is set, \fBlang\fP is ignored.
+.SS \fBlang\fP
+.sp
+The format of \fBlang\fP is the same as for \fBquotation\-lang\fP\&.
+.sp
+\fBlang\fP is the metadata field that \fBpandoc\-citeproc\fP uses to define
+what language your reference list should be in. If \fBpandoc\-citeproc\fP
+and \fBpandoc\-quotes\fP both support your language, you need not set
+\fBquotation\-lang\fP, \fBpandoc\-quotes\fP will use \fBlang\fP, too.
+.SH ADDING LANGUAGES
+.sp
+You can add quotation marks for unsupported languages or override
+\fBpandoc\-quotes\fP default by placing a \fBquot\-marks.yaml\fP file in
+your pandoc data directory. \fBquot\-marks.yaml\fP should be a valid
+\fI\%YAML\fP file, which contains pairs of RFC 5646\-ish
+language codes (e.g., "en\-US", "pt\-BR", "de", "es") and lists of
+quotation marks, in the following order: primary left, primary right,
+secondary left, secondary right. If each quotation mark consists of
+precisely one character (it may span multiple bytes though), you can
+write the list as a simple string.
+.SH CAVEATS
+.sp
+\fBpandoc\fP represents documents as abstract syntax trees, and quotations are
+nodes in that tree. However, \fBpandoc\-quotes\fP replaces those nodes with the
+content of the quotation, adding proper quotation marks. Put another way,
+\fBpandoc\-quotes\fP pushes quotations from the syntax of a document\(aqs
+representation into its semantics. As a consequence, \fBpandoc\fP will no longer
+recognise quotes. Also, filters running after \fBpandoc\-quotes\fP won\(aqt either.
+Therefore, you should \fInot\fP use \fBpandoc\-quotes\fP with output formats that
+represent quotes syntactically (e.g., HTML, LaTeX, ConTexT). Also, it should
+be the last or one of the last filters you apply.
+.sp
+Support for quotation styles of different languages is incomplete and likely
+erroneous. See <\fI\%https://github.com/okroeger/pandoc\-quotes\fP> if you\(aqd like to
+help fix this.
+.SH LICENSE
+.sp
+Copyright 2018 Odin Kroeger
+.sp
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+.sp
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+.sp
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+.SH FURTHER INFORMATION
+.INDENT 0.0
+.IP \(bu 2
+<\fI\%https://github.com/odkr/pandoc\-quotes\fP>
+.IP \(bu 2
+<\fI\%https://pypi.org/project/pandoc\-quotes\fP>
+.UNINDENT
+.SH SEE ALSO
+.sp
+pandoc(1), pandoc\-citeproc(1)
+.SH AUTHOR
+Odin Kroeger
+.\" Generated by docutils manpage writer.
+.
