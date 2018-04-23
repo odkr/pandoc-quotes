@@ -52,6 +52,8 @@ _MAP_FILES = [os.path.join(i, 'quot-marks.yaml')
               for i in [_MODULE_DIR] + _DATA_DIRS]
 """Where to look for quotion maps."""
 
+_MAP_FILE_ENCODING = 'utf-8'
+
 
 # Exceptions
 # ==========
@@ -158,6 +160,8 @@ class QuoMarkReplacer: # pylint: disable=R0903
     map_files = _MAP_FILES
     """Where to look for quotion maps."""
 
+    encoding = _MAP_FILE_ENCODING
+
     def __init__(self, marks=None):
         if not marks is None:
             self.marks = marks
@@ -205,15 +209,15 @@ class QuoMarkReplacer: # pylint: disable=R0903
                 lang = doc.get_metadata('lang')
             if not lang:
                 lang = 'en-US'
-            self.marks = lookup_quotation_marks(lang=lang,
-                                                map_files=self.map_files)
+            self.marks = lookup_quo_marks(lang=lang, map_files=self.map_files,
+                                          encoding=self.encoding)
             return self(elem, doc)
 
 
 # Functions
 # =========
 
-def load_quotation_maps(map_files, encoding='utf-8'):
+def load_maps(map_files, encoding='utf-8'):
     """Loads maps of RFC 5646-like language codes to quotation marks.
 
     Arguments:
@@ -246,8 +250,7 @@ def load_quotation_maps(map_files, encoding='utf-8'):
     return maps
 
 
-def lookup_quotation_marks(lang='en-US',
-                           map_files=_MAP_FILES, encoding='utf-8'):
+def lookup_quo_marks(lang='en-US', map_files=_MAP_FILES, encoding='utf-8'):
     """Looks up quotation marks for a language.
 
     Arguments:
@@ -284,7 +287,7 @@ def lookup_quotation_marks(lang='en-US',
         All exceptions ``load_quotation_maps`` and
         ``QuoMarks.__init__`` raise.
     """
-    map_ = load_quotation_maps(map_files, encoding=encoding)
+    map_ = load_maps(map_files, encoding=encoding)
     for i in range(3):
         try:
             return QuoMarks(*map_[lang])
