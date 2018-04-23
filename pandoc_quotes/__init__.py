@@ -26,6 +26,7 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 # =======
 
 import os
+import string
 from operator import itemgetter
 
 import yaml
@@ -39,6 +40,17 @@ _PANDOC_DATA_DIRS = {'posix': ('~/.pandoc',),
                      'nt': (r'~\AppData\Roaming\pandoc',
                             r'~\Application Data\pandoc')}
 """Default Pandoc data directories by operating system type."""
+
+_DATA_DIRS = [os.path.expanduser(i)
+              for i in _PANDOC_DATA_DIRS[os.name]]
+"""Default pandoc data directories for the current operating."""
+
+_MODULE_DIR = os.path.dirname(__file__)
+"""Directory of the current module."""
+
+_MAP_FILES = [os.path.join(i, 'quot-marks.yaml')
+              for i in [_MODULE_DIR] + _DATA_DIRS]
+"""Where to look for quotion maps."""
 
 
 # Exceptions
@@ -72,7 +84,7 @@ class QuoMarkNotAStringError(Error):
 
 class QuoMarkNotPrintableError(Error):
     """Error raised if a non-printable string is given as quotation mark."""
-    format = 'non-printable string given as quotation mark.'
+    format = '{file} contains non-printable characters.'
 
 
 class QuoMarkUnknownLangError(Error):
@@ -87,33 +99,6 @@ class QuoMarksWrongNumberError(Error):
 
 # Classes
 # =======
-
-class _LangQuoMarkMap(dict):
-    """A mapping of RFC 5646-ish language codes to quotation marks.
-
-    Mappings are loaded from external `YAML <http://yaml.org/>`__ files.
-    See ``quot-marks.yaml`` and ``LangQuoMarks.__init__`` below for details.
-    """
-
-    module_dir = os.path.dirname(__file__)
-    """Directory of the current module."""
-
-    data_dirs = [os.path.expanduser(i)
-                 for i in _PANDOC_DATA_DIRS[os.name]]
-    """Default pandoc data directories for the current operating."""
-
-    map_files = [os.path.join(i, 'quot-marks.yaml')
-                 for i in [module_dir] + data_dirs]
-    """Where to look for quotion maps."""
-
-    def __init__(self):
-        """Loads all maps."""
-        super(_LangQuoMarkMap, self).__init__()
-        for map_file in self.map_files:
-            if os.path.exists(map_file):
-                with open(map_file) as map_fh:
-                    self.update(yaml.load(map_fh.read()))
-
 
 class QuoMarks(tuple):
     """A tuple that represents quotation marks.
@@ -146,17 +131,12 @@ class QuoMarks(tuple):
         Raises:
             ``QuoMarkNotAStringError``:
                 If ``ldquo``, ``rdquo``, ``lsquo``,
-                or ``rsquo`` is not a ``str``.
-            ``QuoMarkNotPrintableError``:
-                If ``ldquo``, ``rdquo``, ``lsquo``,
-                or ``rsquo`` is not printable.
+                or ``rsquo`` is not a ``basestring``.
         """
         quo_marks = (ldquo, rdquo, lsquo, rsquo)
         for i in quo_marks:
-            if not isinstance(i, str):
+            if not isinstance(i, basestring):
                 raise QuoMarkNotAStringError()
-            if not i.isprintable():
-                raise QuoMarkNotPrintableError()
         return tuple.__new__(cls, quo_marks)
 
     ldquo = property(itemgetter(0))
@@ -172,75 +152,11 @@ class QuoMarks(tuple):
     """Secondary right quotation mark."""
 
 
-class LangQuoMarks(tuple):
-    """Represents quotation marks of a given language.
-
-    Items:
-        0-4: As in ``QuoMarks``
-        5: The language code for which quotation marks were found.
-    """
-
-    def __new__(cls, lang='en-US'):
-        """Looks up quotation marks for a language.
-
-        Arguments:
-            ``lang`` (``str``):
-                An RFC 5646-ish language code (e.g., "en-US", "pt-BR",
-                "de", "es"). Defines the language the quotation marks
-                of which to look up. Default: 'en-US'.
-
-        If ``lang`` contains a country code, but no quotation marks have
-        been defined for that country, the country code is discarded and
-        the quotation marks for the language simpliciter are looked up.
-        For example, 'de-DE' will find 'de'.
-
-        If ``lang`` does not contain a country code or if that code has been
-        discarded and no quotation marks have been defined for that language
-        simpliciter, but quotation marks have been defined for variants of that
-        language as they are spoken in a particular country, the quotation
-        marks of the variant that has been defined first are used. For example,
-        'en' will find 'en-US'.
-
-        Raises:
-            ``QuoMarkUnknownLanguageError``:
-                If no quotation marks have been defined for ``lang``.
-
-            All exceptions ``QuoMarks`` raises.
-        """
-        map_ = _LangQuoMarkMap()
-        for i in range(3):
-            try:
-                return tuple.__new__(cls, list(map_[lang]) + [lang])
-            except KeyError:
-                if i == 0:
-                    lang = lang.split('-')[0]
-                elif i == 1:
-                    for j in map_:
-                        if j.startswith(lang):
-                            lang = j
-                            break
-                    else:
-                        break
-        raise QuoMarkUnknownLangError(lang=lang)
-
-    ldquo = property(itemgetter(0))
-    """Primary left quotation mark."""
-
-    rdquo = property(itemgetter(1))
-    """Primary right quotation mark."""
-
-    lsquo = property(itemgetter(2))
-    """Secondary left quotation mark."""
-
-    rsquo = property(itemgetter(3))
-    """Secondary right quotation mark."""
-
-    lang = property(itemgetter(4))
-    """The laguage of the quotation marks."""
-
-
 class QuoMarkReplacer: # pylint: disable=R0903
     """Replaces plain quotation marks in a document with typographic ones."""
+
+    map_files = _MAP_FILES
+    """Where to look for quotion maps."""
 
     def __init__(self, marks=None):
         if not marks is None:
@@ -268,7 +184,8 @@ class QuoMarkReplacer: # pylint: disable=R0903
                 of ``elem``, and a closing quote (as ``Str``), in that order.
 
         Raises:
-            All exceptions ``QuoMarks`` and ``LangQuoMarks`` raise.
+            All exceptions ``QuoMarks.__init__`` and
+            ``lookup_quotation_marks`` raise.
 
             ``QuoMarksWrongNumberError``:
                 If a wrong number of quotation marks has been given.
@@ -288,12 +205,101 @@ class QuoMarkReplacer: # pylint: disable=R0903
                 lang = doc.get_metadata('lang')
             if not lang:
                 lang = 'en-US'
-            self.marks = LangQuoMarks(lang=lang)
+            self.marks = lookup_quotation_marks(lang=lang,
+                                                map_files=self.map_files)
             return self(elem, doc)
 
 
 # Functions
 # =========
+
+def load_quotation_maps(map_files, encoding='utf-8'):
+    """Loads maps of RFC 5646-like language codes to quotation marks.
+
+    Arguments:
+        ``map_files`` (sequence of ``str`` instances):
+            A sequence of possible location of `YAML <http://yaml.org/>`_
+            files that contain mappings of RFC 5646-like language codes to
+            quotation marks.
+        ``encoding`` (``str``):
+            The encoding of those files. Defaults to 'utf-8'.
+
+    Returns (``dict``):
+        A mapping of RFC 5646-like language codes to quotation marks.
+        Quotation marks are represented as ``unicode`` instances,
+        *not* as ``QuoMarks`` instances.
+
+    Raises:
+        ``QuoMarkNotPrintableError``:
+            If a map file contains non-printable characters.
+
+    See ``quot-marks.yaml`` and ``lookup_quotation_marks`` for details.
+    """
+    maps = {}
+    for map_file in map_files:
+        if os.path.exists(map_file):
+            with open(map_file) as map_fh:
+                try:
+                    maps.update(yaml.load(map_fh.read().decode(encoding)))
+                except UnicodeDecodeError:
+                    raise QuoMarkNotPrintableError(file=map_file)
+    return maps
+
+
+def lookup_quotation_marks(lang='en-US',
+                           map_files=_MAP_FILES, encoding='utf-8'):
+    """Looks up quotation marks for a language.
+
+    Arguments:
+        ``lang`` (``str``):
+            An RFC 5646-ish language code (e.g., "en-US", "pt-BR",
+            "de", "es"). Defines the language the quotation marks
+            of which to look up. Default: 'en-US'.
+        ``maps`` (sequence of ``str`` instances):
+            A List of possible locations of mappsings of RFC 5646-like
+            language codes to lists of quotation marks.
+            Default: ``_MAP_FILES`` (module constant).
+        ``encoding`` (``str``):
+            The encoding of those files. Defaults to 'utf-8'.
+
+    If ``lang`` contains a country code, but no quotation marks have
+    been defined for that country, the country code is discarded and
+    the quotation marks for the language simpliciter are looked up.
+    For example, 'de-DE' will find 'de'.
+
+    If ``lang`` does not contain a country code or if that code has been
+    discarded and no quotation marks have been defined for that language
+    simpliciter, but quotation marks have been defined for variants of that
+    language as they are spoken in a particular country, the quotation
+    marks of the variant that has been defined first are used. For example,
+    'en' will find 'en-US'.
+
+    Returns (``QuoMarks``):
+        The quotation marks of that language.
+
+    Raises:
+        ``QuoMarkUnknownLanguageError``:
+            If no quotation marks have been defined for ``lang``.
+
+        All exceptions ``load_quotation_maps`` and
+        ``QuoMarks.__init__`` raise.
+    """
+    map_ = load_quotation_maps(map_files, encoding=encoding)
+    for i in range(3):
+        try:
+            return QuoMarks(*map_[lang])
+        except KeyError:
+            if i == 0:
+                lang = lang.split('-')[0]
+            elif i == 1:
+                for j in map_:
+                    if j.startswith(lang):
+                        lang = j
+                        break
+                else:
+                    break
+    raise QuoMarkUnknownLangError(lang=lang)
+
 
 def replace_quo_marks(elem, marks): # pylint: disable=R1710
     """Replaces quote nodes with their children flanked by quotation marks.
@@ -301,7 +307,7 @@ def replace_quo_marks(elem, marks): # pylint: disable=R1710
     Arguments:
         ``elem`` (``panflute.Element``):
             An element in the AST.
-        ``marks`` (``QuoMarks`` or ``LangQuoMarks``):
+        ``marks`` (``QuoMarks``):
             The quotation marks to use.
 
     Returns:
