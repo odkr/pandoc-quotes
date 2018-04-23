@@ -7,9 +7,23 @@ plain, that is, non-typographic, quotation marks with typographic ones.
 
 You can define which typographic quotation marks to replace plain ones with
 by setting either a document's ``quotation-marks``, ``quotation-language``,
-or ``lang`` metadata field.
+or ``lang`` metadata field. Typically, it should "just work".
 
 See the `manual page <man/pandoc-quotes.rst>`_ for more details.
+
+
+Caveats
+=======
+
+``pandoc`` represents documents as abstract syntax trees, and quotations are
+nodes in that tree. However, ``pandoc-quotes`` replaces those nodes with the
+content of the quotation, adding proper quotation marks. Put another way,
+``pandoc-quotes`` pushes quotations from the syntax of a document's
+representation into its semantics. As a consequence, ``pandoc`` will no longer
+recognise quotes. Also, filters running after ``pandoc-quotes`` won't either.
+Therefore, you should *not* use ``pandoc-quotes`` with output formats that
+represent quotes syntactically (e.g., HTML, LaTeX, ConTexT). Also, it should
+be the last or one of the last filters you apply.
 
 
 Installing ``pandoc-quotes``

@@ -87,9 +87,8 @@ quotation\-marks: ""\(aq\(aq
 If \fBquotation\-marks\fP is set, the other fields are ignored.
 .SS \fBquotation\-lang\fP
 .sp
-An \fI\%RFC 5646\fP\-like code
-for the language the quotation marks of which shall be used
-(e.g., "en\-US", "pt\-BR", "de", "es").
+An \fI\%RFC 5646\fP\-like code for the language the quotation marks of
+which shall be used (e.g., "en\-US", "pt\-BR", "de", "es").
 .sp
 For example:
 .INDENT 0.0
@@ -139,12 +138,32 @@ You can add quotation marks for unsupported languages, or override the
 defaults of \fBpandoc\-quotes\fP, by placing a file named \fBquot\-marks.yaml\fP
 in your pandoc data directory.
 .sp
-\fBquot\-marks.yaml\fP should be a valid \fI\%YAML\fP file, which
-contains pairs of a \fI\%RFC 5646\fP\-like
-language code (e.g., "en\-US", "pt\-BR", "de", "es") and a list of quotation
-marks, which are given in the same format as for \fBquotation\-marks\fP\&.
+\fBquot\-marks.yaml\fP should be a, UTF\-8 encoded, \fI\%YAML\fP file. It should
+contain mappings of \fI\%RFC 5646\fP\-like language codes (e.g., "en\-US", "pt\-BR",
+"de", "es") to lists of quotation marks, which are given in the same
+format as for \fBquotation\-marks\fP\&.
 .sp
-See the \fBquot\-marks.yaml\fP that comes with \fBpandoc\-quotes\fP for an example.
+See the \fBquot\-marks.yaml\fP file that comes with \fBpandoc\-quotes\fP
+for an example.
+.sp
+You can tell \fBpandoc\-quotes\fP to look for such a mapping elsewhere, too, by
+setting the \fBquotation\-lang\-mapping\fP metadata field to the path of such a
+file. \(aq~\(aq will be replaced with your home directory. You can name that file
+as you like.
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\-\-\-
+quotation\-lang\-mapping: ~/.panzer/my\-quot\-marks.yaml
+\&...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
 .SH CAVEATS
 .sp
 \fBpandoc\fP represents documents as abstract syntax trees, and quotations are

@@ -63,9 +63,8 @@ If ``quotation-marks`` is set, the other fields are ignored.
 ``quotation-lang``
 ------------------
 
-An `RFC 5646 <https://tools.ietf.org/html/rfc5646>`_-like code
-for the language the quotation marks of which shall be used
-(e.g., "en-US", "pt-BR", "de", "es").
+An `RFC 5646`_-like code for the language the quotation marks of
+which shall be used (e.g., "en-US", "pt-BR", "de", "es").
 
 For example::
 
@@ -105,12 +104,24 @@ You can add quotation marks for unsupported languages, or override the
 defaults of ``pandoc-quotes``, by placing a file named ``quot-marks.yaml``
 in your pandoc data directory.
 
-``quot-marks.yaml`` should be a valid `YAML <http://yaml.org/>`_ file, which
-contains pairs of a `RFC 5646 <https://tools.ietf.org/html/rfc5646>`_-like
-language code (e.g., "en-US", "pt-BR", "de", "es") and a list of quotation
-marks, which are given in the same format as for ``quotation-marks``.
+``quot-marks.yaml`` should be a, UTF-8 encoded, YAML_ file. It should
+contain mappings of `RFC 5646`_-like language codes (e.g., "en-US", "pt-BR",
+"de", "es") to lists of quotation marks, which are given in the same
+format as for ``quotation-marks``.
 
-See the ``quot-marks.yaml`` that comes with ``pandoc-quotes`` for an example.
+See the ``quot-marks.yaml`` file that comes with ``pandoc-quotes``
+for an example.
+
+You can tell ``pandoc-quotes`` to look for such a mapping elsewhere, too, by
+setting the ``quotation-lang-mapping`` metadata field to the path of such a
+file. '~' will be replaced with your home directory. You can name that file
+as you like.
+
+For example::
+
+    ---
+    quotation-lang-mapping: ~/.panzer/my-quot-marks.yaml
+    ...
 
 
 CAVEATS
@@ -166,3 +177,7 @@ SEE ALSO
 ========
 
 pandoc(1), pandoc-citeproc(1)
+
+
+.. _`RFC 5646`: https://tools.ietf.org/html/rfc5646
+.. _YAML: http://yaml.org/
