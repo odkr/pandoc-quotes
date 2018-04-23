@@ -36,23 +36,26 @@ from panflute import Quoted, Str
 # Constants
 # =========
 
-_PANDOC_DATA_DIRS = {'posix': ('~/.pandoc',),
-                     'nt': (r'~\AppData\Roaming\pandoc',
-                            r'~\Application Data\pandoc')}
+_DATA_DIRS_BY_OS = {'posix': ('~/.pandoc',),
+                    'nt': (r'~\AppData\Roaming\pandoc',
+                           r'~\Application Data\pandoc')}
 """Default Pandoc data directories by operating system type."""
 
-_DATA_DIRS = [os.path.expanduser(i)
-              for i in _PANDOC_DATA_DIRS[os.name]]
-"""Default pandoc data directories for the current operating."""
+_DATA_DIRS = map(os.path.expanduser, _DATA_DIRS_BY_OS[os.name])
+"""Default pandoc data directories for the current operating system."""
 
 _MODULE_DIR = os.path.dirname(__file__)
 """Directory of the current module."""
 
-_MAP_FILES = [os.path.join(i, 'quot-marks.yaml')
-              for i in [_MODULE_DIR] + _DATA_DIRS]
+MAP_FILES = [os.path.join(i, 'quot-marks.yaml')
+             for i in [_MODULE_DIR] + _DATA_DIRS]
 """Where to look for quotion maps."""
 
-_MAP_FILE_ENCODING = 'utf-8'
+ENCODING = 'utf-8'
+"""The encoding of map files."""
+
+DEFAULT_LANGUAGE = 'en-US'
+"""The laguage to use by default, , as RFC 5646-like language code."""
 
 
 # Exceptions
@@ -137,7 +140,7 @@ class QuoMarks(tuple):
         """
         quo_marks = (ldquo, rdquo, lsquo, rsquo)
         for i in quo_marks:
-            if not isinstance(i, basestring): # pylint: disable = E0602
+            if not isinstance(i, basestring): # pylint: disable=E0602
                 raise QuoMarkNotAStringError()
         return tuple.__new__(cls, quo_marks)
 
@@ -156,11 +159,6 @@ class QuoMarks(tuple):
 
 class QuoMarkReplacer: # pylint: disable=R0903
     """Replaces plain quotation marks in a document with typographic ones."""
-
-    map_files = _MAP_FILES
-    """Where to look for quotion maps."""
-
-    encoding = _MAP_FILE_ENCODING
 
     def __init__(self, marks=None):
         if not marks is None:
@@ -181,6 +179,17 @@ class QuoMarkReplacer: # pylint: disable=R0903
                 An element in the AST.
             ``doc`` (``panflute.Doc``):
                 The document.
+
+        Constants:
+            ``MAP_FILES`` (sequence of ``str`` instances):
+                Where to look for quotion maps.
+
+            ``ENCODING`` (``str``):
+                The encoding of map files.
+
+            ``DEFAULT_LANGUAGE`` (``str``)
+                The laguage to use by default,
+                as RFC 5646-like language code.
 
         Returns:
             If ``elem`` was not quoted, nothing.
@@ -208,9 +217,14 @@ class QuoMarkReplacer: # pylint: disable=R0903
             if not lang:
                 lang = doc.get_metadata('lang')
             if not lang:
-                lang = 'en-US'
-            self.marks = lookup_quo_marks(lang=lang, map_files=self.map_files,
-                                          encoding=self.encoding)
+                lang = DEFAULT_LANGUAGE
+            map_files = doc.get_metadata('quotation-lang-mapping')
+            if map_files:
+                map_files = MAP_FILES + [os.path.expanduser(map_files)]
+            else:
+                map_files = MAP_FILES
+            self.marks = lookup_quo_marks(lang=lang, map_files=map_files,
+                                          encoding=ENCODING)
             return self(elem, doc)
 
 
@@ -250,7 +264,7 @@ def load_maps(map_files, encoding='utf-8'):
     return maps
 
 
-def lookup_quo_marks(lang='en-US', map_files=_MAP_FILES, encoding='utf-8'):
+def lookup_quo_marks(lang='en-US', map_files=MAP_FILES, encoding='utf-8'):
     """Looks up quotation marks for a language.
 
     Arguments:
@@ -261,7 +275,7 @@ def lookup_quo_marks(lang='en-US', map_files=_MAP_FILES, encoding='utf-8'):
         ``maps`` (sequence of ``str`` instances):
             A List of possible locations of mappsings of RFC 5646-like
             language codes to lists of quotation marks.
-            Default: ``_MAP_FILES`` (module constant).
+            Default: ``MAP_FILES`` (module constant).
         ``encoding`` (``str``):
             The encoding of those files. Defaults to 'utf-8'.
 
@@ -296,6 +310,8 @@ def lookup_quo_marks(lang='en-US', map_files=_MAP_FILES, encoding='utf-8'):
                 lang = lang.split('-')[0]
             elif i == 1:
                 for j in map_:
+                    if not isinstance(j, basestring): # pylint: disable=E0602
+                        continue
                     if j.startswith(lang):
                         lang = j
                         break
