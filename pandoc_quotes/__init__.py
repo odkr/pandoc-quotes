@@ -26,7 +26,6 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 # =======
 
 import os
-import string
 from operator import itemgetter
 
 import yaml
