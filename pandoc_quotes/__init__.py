@@ -135,7 +135,7 @@ class QuoMarks(tuple):
         """
         quo_marks = (ldquo, rdquo, lsquo, rsquo)
         for i in quo_marks:
-            if not isinstance(i, basestring):
+            if not isinstance(i, basestring): # pylint: disable = E0602
                 raise QuoMarkNotAStringError()
         return tuple.__new__(cls, quo_marks)
 
