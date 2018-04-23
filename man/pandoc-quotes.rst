@@ -8,7 +8,7 @@ Replaces plain quotation marks with typographic ones
 
 :Author: Odin Kroeger
 :Date: April 22, 2018
-:Version: 0.5.1
+:Version: 0.6.0
 :Manual section: 1
 
 

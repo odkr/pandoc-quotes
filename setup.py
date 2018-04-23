@@ -3,7 +3,7 @@ from os import path
 from setuptools import setup
 
 setup(name='pandoc-quotes',
-      version='0.5.1',
+      version='0.6.0',
       description='Pandoc filter that adapts quotation marks.',
       long_description='``pandoc-quotes`` is a filter for '
                        '`pandoc <http://pandoc.org/>`_ that replaces plain, '
