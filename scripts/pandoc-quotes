@@ -30,20 +30,21 @@ from logging import basicConfig, warning
 from argparse import ArgumentParser
 from os.path import basename
 from panflute import run_filter
-from pandoc_quotes import QuoMarkReplacer, Error # pylint: disable = E0401
+from pandoc_quotes import QuoMarkReplacer, Error # pylint: disable=E0401
+
 
 DESCRIPTION = ('Pandoc filter that replaces plain quotation marks with '
                'typographic ones. Respects the language of the document, '
                'as set by the "lang" attribute. Defaults to "en-US". '
                'See pandoc-quotes(1) for details.')
 
-DEBUG = True
+DEBUG = False
+
 
 def main(doc=None):
     """Replaces plain quotation marks with typgraphic ones.
 
-    See ``replace_quotes`` above for details. ``main`` only
-    provides a command line interface.
+    See ``pandoc_quotes`` for details.
 
     Arguments:
         doc (``panflute.Doc``):
