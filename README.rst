@@ -31,7 +31,7 @@ Installing ``pandoc-quotes``
 
 You use ``pandoc-quotes`` **at your own risk**. You have been warned.
 
-You need `Python 2.7 <https://www.python.org/>`_ or newer,
+You need `Python <https://www.python.org/>`_ 2.7 or newer,
 `panflute <https://github.com/sergiocorreia/panflute>`_, and
 `PyYAML <https://github.com/yaml/pyyaml>`_.
 
@@ -45,7 +45,7 @@ will only work on a limited number of systems.
 Alternatively, you can also download the source for the `current version
 <https://codeload.github.com/odkr/pandoc-quotes/tar.gz/v0.6.0>`_.
 
-Simlpy run::
+Simply run::
 
     curl https://codeload.github.com/odkr/pandoc-quotes/tar.gz/v0.6.0 | tar -xz
     cd pandoc-quotes-0.6.0
