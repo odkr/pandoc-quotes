@@ -54,7 +54,7 @@ ENCODING = 'utf-8'
 """The encoding of map files."""
 
 DEFAULT_LANGUAGE = 'en-US'
-"""The laguage to use by default, , as RFC 5646-like language code."""
+"""The laguage to use by default, as RFC 5646-like language code."""
 
 
 # Exceptions
