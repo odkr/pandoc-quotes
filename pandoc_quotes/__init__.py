@@ -26,11 +26,20 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 # =======
 
 import os
+import codecs
 from operator import itemgetter
+from itertools import chain
 
 import yaml
 from panflute import Quoted, Str
 
+# Python3 Compatibility
+# =====================
+
+try:
+    basestring
+except NameError:
+    basestring = str
 
 # Constants
 # =========
@@ -47,7 +56,7 @@ _MODULE_DIR = os.path.dirname(__file__)
 """Directory of the current module."""
 
 MAP_FILES = [os.path.join(i, 'quot-marks.yaml')
-             for i in [_MODULE_DIR] + _DATA_DIRS]
+             for i in chain([_MODULE_DIR], _DATA_DIRS)]
 """Where to look for quotion maps."""
 
 ENCODING = 'utf-8'
@@ -255,9 +264,9 @@ def load_maps(map_files, encoding='utf-8'):
     maps = {}
     for map_file in map_files:
         if os.path.exists(map_file):
-            with open(map_file) as map_fh:
+            with codecs.open(map_file, encoding=encoding) as map_fh:
                 try:
-                    maps.update(yaml.load(map_fh.read().decode(encoding)))
+                    maps.update(yaml.load(map_fh.read()))
                 except UnicodeDecodeError:
                     raise QuoMarkNotPrintableError(file=map_file)
     return maps
