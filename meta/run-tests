@@ -1,0 +1,155 @@
+#!/bin/bash
+# run-tests - Runs various tests and linters.
+# Copyright 2019 Odin Kroeger
+#
+# This is a bash script, because POSIX doesn't specify whether
+# `cmd1 | cmd2` returns the exit status of cmd1 or cmd2.
+#
+# Assumes:
+#   1. `cmd1 | cmd2` returns the exit status of cmd2.
+#   2. There is a file `setup.py` at the root of the repository so that:
+#      (a) `setup.py` has no side-effects upon import.
+#      (b) `setup.py` front-ends Python's setuptools.
+#      (c) `setup.py` stores all arguments to setuptools' `setup` function
+#          in a global mapping called 'METADATA'. 
+#      (d) METADATA has a member 'packages', which points to a sequence.
+#      (e) the first item of METADATA['packages'] is the name of the package.
+
+set -Cefu
+
+
+# Configuration
+# =============
+
+# The name of the Python interpreter to use.
+PYTHON=python
+
+# The name of the pip utility to use.
+PIP=pip
+
+# Utilties that shall *not* be ran.
+# Input Field Seperator-separated list of command names.
+EXCLUDE_TESTS="mypy pylint"
+
+# Python command to get all package names.
+# This is piped to ``xargs -0``, 
+# so use nullbytes to separate multiple paths.
+PYTHON_PACKAGE_COMMAND="from setup import METADATA
+if 'packages' in METADATA:
+    print('\\0'.join(METADATA['packages']))
+    if 'scripts' in METADATA:
+        print('\\0'.join(METADATA['scripts']))"
+
+
+# Functions
+# =========
+
+# Takes a signal as argument, runs $EX, propagates the signal, and exits.
+onexit() {
+    __ONEXIT_STATUS=$?
+    trap '' 0 "${1:?'missing SIGNAL.'}" || :
+    set +e
+    eval "${EX-}"
+    EX=''
+    kill "-$1" $$ 2>/dev/null
+    exit "$__ONEXIT_STATUS"
+}
+
+# Registers onexit to catch signals 0, 1, 2, 3, 6, and 15.
+# shellcheck disable=2064
+register_onexit() {
+    for __REGISTER_ONEXIT_SIGNO in 0 1 2 3 6 13 15; do
+        trap "onexit $__REGISTER_ONEXIT_SIGNO" $__REGISTER_ONEXIT_SIGNO
+    done
+}
+
+
+# Returns whether NEEDLE is in HAYSTACK.
+inlist() (
+    needle="${1:?'missing NEEDLE.'}"
+    shift
+    for i; do
+        [ "$needle" = "$i" ] && return
+    done
+    return 1
+)
+
+
+# Takes a MESSAGE and arguments and prints the formated MESSAGE on STDERR.
+warn() (
+    message="${1:?'missing MESSAGE'}"
+    shift
+    printf -- "run-tests: $message\\n" "$@" >&2
+)
+
+
+# Main
+# ====
+
+REPO=$(git worktree list | head -n1 | cut -f1 -d ' ')
+: "${REPO:?'Could not determine repository path.'}"
+
+cd -P "$REPO" || exit
+
+PACKAGES=$("$PYTHON" -c "$PYTHON_PACKAGE_COMMAND")
+: "${PACKAGES:?'Could not determine package name(s).'}"
+
+
+if ! inlist mypy $EXCLUDE_TESTS; then
+    mypy --help >/dev/null 2>&1 || ERRLVL=$?;
+    if [ ${ERRLVL-0} -ne 127 ]; then
+            warn "running mypy."
+            printf -- '%s' "$PACKAGES" | xargs -0 mypy
+    fi
+fi
+
+if ! inlist bandit $EXCLUDE_TESTS; then
+    bandit --help >/dev/null 2>&1 || ERRLVL=$?
+    if [ ${ERRLVL-0} -ne 127 ]; then
+        warn "running bandit."
+        printf -- '%s' "$PACKAGES" | xargs -0 bandit -r
+    fi
+fi
+
+if ! inlist flake8 $EXCLUDE_TESTS; then
+    flake8 --help >/dev/null 2>&1 || ERRLVL=$?
+    if [ ${ERRLVL-0} -ne 127 ]; then
+        warn "running flake8."
+        printf -- '%s' "$PACKAGES" | xargs -0 flake8 --ignore=E252,E262,W504
+    fi
+fi
+
+if ! inlist pylint $EXCLUDE_TESTS; then
+    pylint --help >/dev/null 2>&1 || ERRLVL=$?
+    if [ ${ERRLVL-0} -ne 127 ]; then
+        warn "running pylint."
+        printf -- '%s' "$PACKAGES" | xargs -0 pylint -s n
+    fi
+fi
+
+if ! inlist pydocstyle $EXCLUDE_TESTS; then
+    pydocstyle --help >/dev/null 2>&1 || ERRLVL=$?
+    if [ ${ERRLVL-0} -ne 127 ]; then
+        warn "running pydocstyle."
+        printf -- '%s' "$PACKAGES" | xargs -0 pydocstyle --add-ignore=D104
+    fi
+fi
+
+warn "running test suite(s)."
+"$PYTHON" setup.py --quiet test
+
+[ -e Makefile ] && grep -Eq '^test:' Makefile && make test
+
+"$PYTHON" -c 'import virtualenv' 2>/dev/null || ERRLVL=$?
+if [ "${ERRLVL-0}" -eq 0 ]; then
+    warn "testing installation."
+    [ -d env ] || "$PYTHON" -m virtualenv env
+    . env/bin/activate
+    register_onexit
+    export PACKAGES
+    NAME=$(printf -- '%s' "$PACKAGES" | xargs -0 sh -c 'echo "${1:?}"' --)
+    : "${NAME:?'Could not determine package name.'}"
+    EX="\"$PIP\" uninstall --quiet --yes \"$NAME\""
+    "$PYTHON" setup.py --quiet install || return
+    "$PYTHON" -c "import $NAME"
+fi

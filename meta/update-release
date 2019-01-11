@@ -1,0 +1,281 @@
+#!/bin/sh
+# update-release - Updates release name and release package on GitHub and PyPI.
+# Copyright 2019 Odin Kroeger
+#
+# Performs various tests to make sure that releases work.
+#
+# Assumptions:
+# * There is a git tag for every release, starting with "v".
+# * GitHub is used.
+
+set -Cefu
+
+
+# Configuration
+# =============
+
+# The files in which to replace the old release string with the new one.
+# Takes a list of pathnames seperated by the input field seperator ($IFS).
+UPDATE_FILES='setup.py README.rst'
+
+# Whether to run tests again after updating the release name.
+# You should do this if, and only if, some of the files listed in
+# UPDATE_FILES contain project code. There is no need to do this
+# if you only update setup.py and the README. 0 means "don't",
+# every other number means "do".
+TEST_TWICE=1
+
+# The username to user to logon to PyPI.
+TWINE_USERNAME=odkr
+
+# The local name of the remote repository.
+REMOTE_REPO=origin
+
+# A template for the GitHub download URL.
+# The first %s is replaced with the GitHub username,
+# the second %s is replaced with the GitHub repository name,
+# the third with the tag of the new release.
+DOWNLOAD_URL_TEMPLATE="https://codeload.github.com/%s/%s/tar.gz/%s"
+
+# The name of the Python interpreter to use.
+PYTHON=python3
+
+readonly UPDATE_FILES DOWNLOAD_URL_TEMPLATE TWINE_USERNAME REMOTE_REPO
+export TWINE_USERNAME
+
+
+# Functions
+# =========
+
+# Takes a signal as argument, runs $EX, propagates the signal, and exits.
+onexit() {
+    __ONEXIT_STATUS=$?
+    trap '' 0 "${1:?'onexit: missing SIGNAL.'}" || :
+    set +e
+    eval "${EX-}"
+    EX=''
+    kill "-$1" $$ 2>/dev/null
+    exit "$__ONEXIT_STATUS"
+}
+
+# Registers onexit to catch signals 0, 1, 2, 3, 6, and 15.
+# shellcheck disable=2064
+register_onexit() {
+    for __REGISTER_ONEXIT_SIGNO in 0 1 2 3 6 13 15; do
+        trap "onexit $__REGISTER_ONEXIT_SIGNO" $__REGISTER_ONEXIT_SIGNO
+    done
+}
+
+# Takes a FORMAT and arguments and prints it on STDERR.
+warn() (
+    format="${1:?'missing FORMAT.'}"
+    shift
+    printf -- "update-release: $format\\n" "$@" >&2
+)
+
+# Takes an exit STATUS, a FORMAT, and arguments as arguments,
+# prints the MESSAGE to STDERR and exits with STATUS.
+# shellcheck disable=2059
+panic() {
+    set +eu
+    __PANIC_STATUS="${1:?'missing STATUS.'}"
+    shift
+    warn "$@"
+    exit "$__PANIC_STATUS"
+}
+
+# Takes a FILE, a STRING, and a SUBSTITUTE as arguments,
+# and replaces all occurances of STRING in FILE with SUBSTITUTE.
+# Makes a backup. And uses a temporary file.
+replace() (
+    fname="${1:?'missing FILE.'}"
+    old="${2:?'missing STRING.'}"
+    new="${3:?'missing SUBSTITUTE.'}"
+    tmp=".$fname.tmp"
+    readonly tmp
+    [ -e "$tmp" ] && panic 69 '%s: file exists!' "$tmp"
+    cp "$fname" "$fname.orig" || return
+    register_onexit
+    EX="[ -e \"$tmp\" ] && rm -f \"$tmp\";"
+    sed "s/${old?}/${new?}/" "$fname" >"$tmp" || return
+    [ -f "$tmp" ] && mv "$tmp" "$fname"
+    unset EX
+)
+
+# Takes a string and checks if it is a version number.
+isversnum() (
+    string="${1:?'missing string.'}"
+    case $string in
+        v*)
+            :
+            ;;
+        *[!0-9]*.*[!0-9]*.*[!0-9a-z-]*)
+            :
+            ;;
+        *.*.*)
+            return 0
+            ;;
+        *)
+            :
+            ;;
+    esac
+    panic 64 '%s: illegal version number!' "$string"
+)
+
+# Takes a prompt as argument and asks for a password.
+# shellcheck disable=2006
+askpass() (
+    register_onexit
+    # shellcheck disable=2046
+    cat <<EOF | tr -d '\n' >&2
+$*
+EOF
+    # shellcheck disable=2016
+    EX='stty echo 2>/dev/null; [ "$1" = 0 ] && echo >&2'
+    stty -echo
+    pass=''
+    read -r pass
+    cat <<EOF
+$pass
+EOF
+)
+
+
+# Argument processing
+# ===================
+
+if ! [ "${1-}" ]; then
+    printf 'usage: %s RELEASE\n' "${0##*/}" >&2
+    exit 64
+fi
+
+NEW_RELEASE="${1:?}"
+isversnum "$NEW_RELEASE" || exit
+readonly NEW_RELEASE
+
+
+# Determine other variables
+# =========================
+
+PREVIOUS_RELEASES=$(git tag --sort v:refname | sed -n 's/^v//p')
+: "${PREVIOUS_RELEASES:?'Could not guess previous releases.'}"
+readonly PREVIOUS_RELEASES
+
+MOST_RECENT_RELEASE=$(printf -- '%s' "$PREVIOUS_RELEASES" | tail -n1)
+: "${MOST_RECENT_RELEASE:?'Could not guess most recent release.'}"
+readonly MOST_RECENT_RELEASE
+
+[ "$MOST_RECENT_RELEASE" = "$NEW_RELEASE" ] && \
+    panic 64 "%s: is the most recent release." "$NEW_RELEASE"
+
+for RELEASE in $PREVIOUS_RELEASES; do
+    [ "$RELEASE" = "$NEW_RELEASE" ] && \
+        panic 64 "%s: is a previous release." "$NEW_RELEASE"
+done
+
+GITHUB_REPO=$(git remote show "$REMOTE_REPO" -n | 
+    sed -n '/URL: / {s/.*\///; s/\.git//; p; q;}')
+: "${GITHUB_REPO:?'Could not guess remote repository GitHub name.'}"
+readonly GITHUB_REPO
+
+GITHUB_USERNAME=$(git remote show "$REMOTE_REPO" -n | 
+    sed -n '/URL:/ {s/.* git@github\.com://; s/\/.*//; p; q;}')
+: "${GITHUB_USERNAME:?'Could not guess GitHub username.'}"
+
+REPO=$(git worktree list | head -n1 | cut -f1 -d ' ')
+cd -P "${REPO:?'Could not guess local repository path.'}" || exit
+REPO=$(pwd)
+: "${REPO:?'local repository disappeared.'}"
+readonly REPO
+export REPO
+
+TMPDIR="$REPO/tmp"
+readonly TMPDIR
+
+NAME=$($PYTHON -c 'import sys, setup; print(setup.NAME)')
+[ "${NAME-}" ] || panic 78 'Could not guess package name!'
+readonly NAME
+
+
+# Main
+# ====
+
+meta/run-tests || exit
+
+register_onexit
+EX=:
+for FILE in $UPDATE_FILES; do
+    warn "updating %s." "$FILE"
+    replace "$FILE" "$MOST_RECENT_RELEASE" "$NEW_RELEASE"
+    EX="${EX?}; [ -e \"$FILE.orig\" ] && mv \"$FILE.orig\" \"$FILE\""
+done
+unset FILE
+
+if [ "${TEST_TWICE-0}" -ne 0 ]; then
+    meta/run-tests || exit
+fi
+
+unset EX
+
+warn "updating documentation."
+
+cd -P docs || exit
+make clean html >/dev/null
+cd -P "$REPO" || exit
+
+warn 'releasing on GitHub.'
+TAG="v$NEW_RELEASE"
+git add setup.py README.rst docs
+git commit -m 'Updated release.'
+git tag "$TAG"
+git push --quiet "$REMOTE_REPO" "$TAG"
+git push --quiet "$REMOTE_REPO"
+
+if $PYTHON -c 'import virtualenv'; then
+    warn 'testing installation of GitHub release.'
+    [ -d env ] || $PYTHON -m virtualenv env
+    . env/bin/activate
+    EX='[ "${TMPDIR-}" ] && [ -d "$TMPDIR" ] && rm -rf "$TMPDIR"'
+    mkdir -m 0700 "$TMPDIR" || exit
+    cd -P "$TMPDIR" || exit
+    # These instructions mirror those in README.rst
+    DOWNLOAD_URL=$(printf -- "$DOWNLOAD_URL_TEMPLATE" \
+        "$GITHUB_USERNAME" "$GITHUB_REPO" "$TAG")
+    curl -fsS "$DOWNLOAD_URL" | tar -xz
+    PYPATH=$($PYTHON -c 'import sys; print("\n".join(sys.path))' | 
+        grep -v '.zip' | grep -E "$REPO" | head -n1)
+    [ -d "${PYPATH:?}" ] && {
+        cp -r "$GITHUB_REPO-$NEW_RELEASE/$NAME" "$PYPATH"
+    }
+    $PYTHON -c "import $NAME"
+    FROM="$GITHUB_REPO-$NEW_RELEASE"
+    TO="${PYPATH:?}/${NAME:?}"
+    for DIR in "$FROM" "$TO"; do
+        rm -rf "$DIR"
+        [ -e "$DIR" ] && panic 69 '%s: not deleted!' "$DIR"
+    done
+    cd -P "$REPO" || exit
+    find env -name "$NAME-*" -delete
+    
+    warn 'testing with PyPI test instance'
+    rm -rf build dist
+    $PYTHON setup.py --quiet sdist bdist_wheel
+    TWINE_PASSWORD=$(askpass "Password for PyPI login $TWINE_USERNAME: ")
+    : "${TWINE_PASSWORD:?'No password given.'}"
+    readonly TWINE_PASSWORD
+    export TWINE_PASSWORD
+    twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+    cd / || exit
+    $PYTHON -m pip install --quiet \
+        --index-url https://test.pypi.org/simple/ "$NAME"
+    $PYTHON -c "import $NAME"
+    pip3 uninstall --quiet --yes "$NAME"
+    cd -P "$REPO" || exit
+    
+    warn 'uploading to PyPI and testing installation'
+    twine upload dist/*
+    cd / || exit
+    $PYTHON -m pip install --quiet "$NAME"
+    $PYTHON -c "import $NAME"
+    pip3 uninstall --quiet --yes "$NAME"
+fi
