@@ -229,7 +229,7 @@ def load_maps(map_files, encoding='utf-8'):
         if os.path.exists(map_file):
             with open(map_file) as map_fh:
                 try:
-                    maps.update(yaml.load(map_fh.read().decode(encoding)))
+                    maps.update(yaml.safe_load(map_fh.read().decode(encoding)))
                 except UnicodeDecodeError:
                     raise QuoMarkNotPrintableError(file=map_file)
     return maps
