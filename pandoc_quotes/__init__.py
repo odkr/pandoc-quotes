@@ -42,11 +42,17 @@ _DATA_DIRS_BY_OS = {'posix': ('~/.pandoc',),
 _DATA_DIRS = map(os.path.expanduser, _DATA_DIRS_BY_OS[os.name])
 """Default pandoc data directories for the current operating system."""
 
-_MODULE_DIR = os.path.dirname(__file__)
-"""Directory of the current module."""
 
-MAP_FILES = [os.path.join(i, 'quot-marks.yaml')
-             for i in [_MODULE_DIR] + _DATA_DIRS]
+try:
+    from pkg_resources import resource_stream
+    _MODULE_FILE = resource_stream(__name__, 'quot-marks.yaml')
+except ImportError:
+    _MODULE_FILE = os.path.dirname(__file__)
+    """Directory of the current module."""
+
+
+
+MAP_FILES = [_MODULE_FILE] + [os.path.join(i, 'quot-marks.yaml') for i in _DATA_DIRS]
 """Where to look for quotion maps."""
 
 ENCODING = 'utf-8'
@@ -226,7 +232,13 @@ def load_maps(map_files, encoding='utf-8'):
     """
     maps = {}
     for map_file in map_files:
-        if os.path.exists(map_file):
+        # pylint: disable=E0602
+        if isinstance(map_file, file):
+            try:
+                maps.update(yaml.safe_load(map_file.read().decode(encoding)))
+            except UnicodeDecodeError:
+                raise QuoMarkNotPrintableError(file=map_file.name)
+        elif os.path.exists(map_file):
             with open(map_file) as map_fh:
                 try:
                     maps.update(yaml.safe_load(map_fh.read().decode(encoding)))
