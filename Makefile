@@ -1,4 +1,4 @@
-test: test-simple test-lookup test-lookup-harder
+test: test-simple test-lookup test-lookup-harder test-lookup-hardest
 
 test-simple:
 	rm -f test/simple-is.html
