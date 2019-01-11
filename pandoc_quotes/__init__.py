@@ -24,12 +24,11 @@
 # Modules
 # =======
 
-import os
 from operator import itemgetter
+from os import path, name
 
-import yaml
+from yaml import safe_load
 from panflute import Quoted, Str
-
 
 # Constants
 # =========
@@ -39,20 +38,19 @@ _DATA_DIRS_BY_OS = {'posix': ('~/.pandoc',),
                            r'~\Application Data\pandoc')}
 """Default Pandoc data directories by operating system type."""
 
-_DATA_DIRS = map(os.path.expanduser, _DATA_DIRS_BY_OS[os.name])
+_DATA_DIRS = map(path.expanduser, _DATA_DIRS_BY_OS[name])
 """Default pandoc data directories for the current operating system."""
-
 
 try:
     from pkg_resources import resource_stream
     _MODULE_FILE = resource_stream(__name__, 'quot-marks.yaml')
+    """Quotation mark map that ships with the module."""
 except ImportError:
-    _MODULE_FILE = os.path.dirname(__file__)
-    """Directory of the current module."""
+    _MODULE_FILE = path.dirname(__file__)
+    """Quotation mark map that ships with the module."""
 
-
-
-MAP_FILES = [_MODULE_FILE] + [os.path.join(i, 'quot-marks.yaml') for i in _DATA_DIRS]
+MAP_FILES = ([_MODULE_FILE] +
+             [path.join(i, 'quot-marks.yaml') for i in _DATA_DIRS])
 """Where to look for quotion maps."""
 
 ENCODING = 'utf-8'
@@ -203,7 +201,7 @@ class QuoMarkReplacer: # pylint: disable=R0903
                 lang = DEFAULT_LANGUAGE
             map_files = doc.get_metadata('quotation-lang-mapping')
             if map_files:
-                map_files = MAP_FILES + [os.path.expanduser(map_files)]
+                map_files = MAP_FILES + [path.expanduser(map_files)]
             else:
                 map_files = MAP_FILES
             self.marks = lookup_quo_marks(lang=lang, map_files=map_files,
@@ -235,13 +233,13 @@ def load_maps(map_files, encoding='utf-8'):
         # pylint: disable=E0602
         if isinstance(map_file, file):
             try:
-                maps.update(yaml.safe_load(map_file.read().decode(encoding)))
+                maps.update(safe_load(map_file.read().decode(encoding)))
             except UnicodeDecodeError:
                 raise QuoMarkNotPrintableError(file=map_file.name)
-        elif os.path.exists(map_file):
+        elif path.exists(map_file):
             with open(map_file) as map_fh:
                 try:
-                    maps.update(yaml.safe_load(map_fh.read().decode(encoding)))
+                    maps.update(safe_load(map_fh.read().decode(encoding)))
                 except UnicodeDecodeError:
                     raise QuoMarkNotPrintableError(file=map_file)
     return maps
