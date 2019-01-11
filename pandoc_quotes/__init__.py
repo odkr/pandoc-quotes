@@ -1,26 +1,25 @@
 # encoding=utf-8
-"""Sets the right quotes in a Pandoc Abstract Syntax Tree.
-
-Copyright (c) 2018 Odin Kroeger
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
-OR OTHER DEALINGS IN THE SOFTWARE.
-"""
+#
+# Copyright 2018, 2019 Odin Kroeger
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+# USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""Sets the right quotes in a Pandoc Abstract Syntax Tree."""
 
 # Modules
 # =======
@@ -62,43 +61,40 @@ DEFAULT_LANGUAGE = 'en-US'
 
 class Error(Exception):
     """Base class for exceptions of this module."""
-    format = 'Unspecified error.'
+    message = 'Unspecified error.'
     """Format for error messages, should be overriden by subclasses."""
 
     def __init__(self, **kwargs):
-        """Creates a new exception.
+        """Create a new exception.
 
-        Arguments:
-            ``kwargs`` (mapping):
-                A dictionary that is used to fill in values
-                in the error message.
+        :param dict(str, str) kwargs: A mapping to fill in keys in the message.
         """
         super(Error, self).__init__()
         self.__dict__.update(**kwargs)
 
     def __str__(self):
-        """Returns an error message."""
-        return self.format.format(**vars(self))
+        """Return an error message."""
+        return self.message.format(**vars(self))
 
 
 class QuoMarkNotAStringError(Error):
     """Error raised if a given quotation mark is not of the type ``str``."""
-    format = 'given quotation mark is not of type ``str``.'
+    message = 'given quotation mark is not of type ``str``.'
 
 
 class QuoMarkNotPrintableError(Error):
     """Error raised if a non-printable string is given as quotation mark."""
-    format = '{file} contains non-printable characters.'
+    message = '{file} contains non-printable characters.'
 
 
 class QuoMarkUnknownLangError(Error):
     """Error raised if no quotes are defined for the given language."""
-    format = '{lang}: unknown language.'
+    message = '{lang}: unknown language.'
 
 
 class QuoMarksWrongNumberError(Error):
     """Error raised if given a wrong number quotation."""
-    format = 'quotation-marks: {num} given, 4 expected.'
+    message = 'quotation-marks: {num} given, 4 expected.'
 
 
 # Classes
@@ -117,25 +113,16 @@ class QuoMarks(tuple):
     """
 
     def __new__(cls, ldquo, rdquo, lsquo, rsquo):
-        """Creates a new tuple to store quotation marks.
+        r"""Create a new tuple to store quotation marks.
 
-        Arguments:
-            ``ldquo`` (``str``):
-                The left primary quotation mark.
-            ``rdquo`` (``str``):
-                The right primary quotation mark.
-            ``lsquo`` (``str``):
-                The left secondary quotation mark.
-            ``rsquo`` (``str``):
-                The right secondary quotation mark.
-
-        Returns (``QuoMarks``):
-            A tuple that represents quotation marks.
-
-        Raises:
-            ``QuoMarkNotAStringError``:
-                If ``ldquo``, ``rdquo``, ``lsquo``,
-                or ``rsquo`` is not a ``basestring``.
+        :param str ldquo: The left primary quotation mark.
+        :param str rdquo: The right primary quotation mark.
+        :param str lsquo: The left secondary quotation mark.
+        :param str rsquo: The right secondary quotation mark.
+        :returns: A tuple that represents quotation marks.
+        :rtype: QuoMarks
+        :raises QuoMarkNotAStringError: If *ldquo*, *rdquo*, *lsquo*, or\
+            *rsquo* is not a :type:`basestring`.
         """
         quo_marks = (ldquo, rdquo, lsquo, rsquo)
         for i in quo_marks:
@@ -164,43 +151,34 @@ class QuoMarkReplacer: # pylint: disable=R0903
             self.marks = marks
 
     def __call__(self, elem, doc):
-        """Replaces plain quotation marks in a document with typographic ones.
+        """Replace plain quotation marks in a document with typographic ones.
 
-        Which typographic quotation marks will be used depends on the
-        metadata fields ``quotation-marks``, ``quotation-lang``, ``lang``
-        of ``doc`` (see ``QuoMarks.__init__`` and ``LangQuoMarks.__init__``
-        for the format of those fields), with ``quotation-marks`` taking
-        precedence over ``quotation-lang`` and ``quotation-lang`` taking
-        precedence over ``lang``.
+        :param panflute.Element elem: An element in the AST.
+        :param panflute.Doc doc: The document.
+        :returns: A list with an opening quote (as `Str`), the children
+            of *elem*, and a closing quote (as `Str`), in that order.
+            If *elem* was not quoted, `None`.
+        :rtype: list or None
+        :raises QuoMarkNotAStringError: \
+            If *ldquo*, *rdquo*, *lsquo*, or *rsquo* \
+            isn't a :type:`basestring`.
+        :raises QuoMarkNotPrintableError: \
+            If a map file contains non-printable characters.
+        :raises QuoMarksWrongNumberError: \
+            If a wrong number of quotation marks has been given.
 
-        Arguments:
-            ``elem`` (``panflute.Element``):
-                An element in the AST.
-            ``doc`` (``panflute.Doc``):
-                The document.
+        Which typographic quotation marks are used depends on the metadata
+        fields ``quotation-marks``, ``quotation-lang``, ``lang`` of ``doc``
+        (see :meth:`QuoMarks.__init__` and :meth:`LangQuoMarks.__init__` for
+        the format of those fields), with ``quotation-marks`` taking precedence
+        over ``quotation-lang`` and ``quotation-lang`` taking precedence over
+        ``lang``.
 
         Constants:
-            ``MAP_FILES`` (sequence of ``str`` instances):
-                Where to look for quotion maps.
-
-            ``ENCODING`` (``str``):
-                The encoding of map files.
-
-            ``DEFAULT_LANGUAGE`` (``str``)
-                The laguage to use by default,
+            * :const:`MAP_FILES`: Where to look for quotion maps.
+            * :const:`ENCODING`: The encoding of map files.
+            * :const:`DEFAULT_LANGUAGE`: The laguage to use by default,\
                 as RFC 5646-like language code.
-
-        Returns:
-            If ``elem`` was not quoted, nothing.
-            Otherwise, a list with an opening quote (as ``Str``), the children
-                of ``elem``, and a closing quote (as ``Str``), in that order.
-
-        Raises:
-            All exceptions ``QuoMarks.__init__`` and
-            ``lookup_quotation_marks`` raise.
-
-            ``QuoMarksWrongNumberError``:
-                If a wrong number of quotation marks has been given.
         """
         try:
             return replace_quo_marks(elem, self.marks)
@@ -231,26 +209,20 @@ class QuoMarkReplacer: # pylint: disable=R0903
 # =========
 
 def load_maps(map_files, encoding='utf-8'):
-    """Loads maps of RFC 5646-like language codes to quotation marks.
+    """Load maps of RFC 5646-like language codes to quotation marks.
 
-    Arguments:
-        ``map_files`` (sequence of ``str`` instances):
-            A sequence of possible location of `YAML <http://yaml.org/>`_
-            files that contain mappings of RFC 5646-like language codes to
-            quotation marks.
-        ``encoding`` (``str``):
-            The encoding of those files. Defaults to 'utf-8'.
-
-    Returns (``dict``):
-        A mapping of RFC 5646-like language codes to quotation marks.
-        Quotation marks are represented as ``unicode`` instances,
-        *not* as ``QuoMarks`` instances.
-
-    Raises:
-        ``QuoMarkNotPrintableError``:
+    :param list(str) map_files: A sequence of possible location of \
+        `YAML <http://yaml.org/>`_ files that contain mappings of
+        RFC 5646-like language codes to quotation marks.
+    :param str encoding: The encoding of those files.
+    :returns: A mapping of RFC 5646-like language codes to quotation marks.\
+        Quotation marks are represented as instances of :type:`unicode`,
+        *not* as intances of :class:`QuoMarks`.
+    :rtype: dict(unicode)
+    :raises QuoMarkNotPrintableError: \
             If a map file contains non-printable characters.
 
-    See ``quot-marks.yaml`` and ``lookup_quotation_marks`` for details.
+    See :file:`quot-marks.yaml` and :func:`lookup_quo_marks` for details.
     """
     maps = {}
     for map_file in map_files:
@@ -264,41 +236,34 @@ def load_maps(map_files, encoding='utf-8'):
 
 
 def lookup_quo_marks(lang='en-US', map_files=MAP_FILES, encoding='utf-8'):
-    """Looks up quotation marks for a language.
+    """Look up quotation marks for a language.
 
-    Arguments:
-        ``lang`` (``str``):
-            An RFC 5646-ish language code (e.g., "en-US", "pt-BR",
-            "de", "es"). Defines the language the quotation marks
-            of which to look up. Default: 'en-US'.
-        ``maps`` (sequence of ``str`` instances):
-            A List of possible locations of mappsings of RFC 5646-like
-            language codes to lists of quotation marks.
-            Default: ``MAP_FILES`` (module constant).
-        ``encoding`` (``str``):
-            The encoding of those files. Defaults to 'utf-8'.
+    :param str lang:  The language the quotation marks of which to look up,\
+        as an RFC 5646-ish language code (e.g., "en-US", "pt-BR", "de", "es").
+    :param list(str) maps: Possible locations of mappings of\
+        RFC 5646-like language codes to lists of quotation marks.
+    :param str encoding: The encoding of those files.
+    :returns: The quotation marks of that language.
+    :rtype: QuoMarks
+    :raises QuoMarkUnknownLanguageError: \
+        If no quotation marks have been defined for *lang*.
+    :raises QuoMarkNotAStringError: If *ldquo*, *rdquo*, *lsquo*, or\
+        *rsquo* is not a :type:`basestring`.
+    :raises QuoMarkNotPrintableError: \
+            If a map file contains non-printable characters.
 
-    If ``lang`` contains a country code, but no quotation marks have
-    been defined for that country, the country code is discarded and
-    the quotation marks for the language simpliciter are looked up.
-    For example, 'de-DE' will find 'de'.
+    If *lang* is a country code, but no quotation marks have been defined
+    for that country, the country code is discarded and the quotation marks
+    for the language are looked up. For example, 'de-DE' will find 'de'.
 
-    If ``lang`` does not contain a country code or if that code has been
-    discarded and no quotation marks have been defined for that language
-    simpliciter, but quotation marks have been defined for variants of that
-    language as they are spoken in a particular country, the quotation
-    marks of the variant that has been defined first are used. For example,
-    'en' will find 'en-US'.
+    If *lang* is a code for a language simpliciter (e.g., 'en'), no quotation
+    marks have been defined for that language, but quotation marks have been
+    defined for variants of that language as they are spoken in a particular
+    country, the quotation marks of the variant that has been defined first are
+    used. For example, 'en' will find 'en-US'.
 
-    Returns (``QuoMarks``):
-        The quotation marks of that language.
-
-    Raises:
-        ``QuoMarkUnknownLanguageError``:
-            If no quotation marks have been defined for ``lang``.
-
-        All exceptions ``load_quotation_maps`` and
-        ``QuoMarks.__init__`` raise.
+    These stack up. For example, 'de-AT' would find 'de-DE' if 'de' were not
+    defined.
     """
     map_ = load_maps(map_files, encoding=encoding)
     for i in range(3):
@@ -320,22 +285,18 @@ def lookup_quo_marks(lang='en-US', map_files=MAP_FILES, encoding='utf-8'):
 
 
 def replace_quo_marks(elem, marks): # pylint: disable=R1710
-    """Replaces quote nodes with their children flanked by quotation marks.
+    """Replace quote nodes with their children flanked by quotation marks.
 
-    Arguments:
-        ``elem`` (``panflute.Element``):
-            An element in the AST.
-        ``marks`` (``QuoMarks``):
-            The quotation marks to use.
-
-    Returns:
-        If ``elem`` was not quoted, nothing.
-        Otherwise, a list with an opening quote (as ``Str``), the children
-            of ``elem``, and a closing quote (as ``Str``), in that order.
+    :param panflute.Element elem: An element in the AST.
+    :param QuoMarks marks: The quotation marks to use.
+    :returns: A list with an opening quote (as ``Str``), the children
+        of *elem*, and a closing quote (as ``Str``), in that order.
+        If *elem* was not quoted, ``None``.
+    :rtype: list or None
     """
     if isinstance(elem, Quoted):
         unquoted = list(elem.content)
         if elem.quote_type == 'SingleQuote':
             return [Str(marks.lsquo)] + unquoted + [Str(marks.rsquo)]
-        elif elem.quote_type == 'DoubleQuote':
+        if elem.quote_type == 'DoubleQuote':
             return [Str(marks.ldquo)] + unquoted + [Str(marks.rdquo)]
