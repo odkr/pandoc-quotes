@@ -2,7 +2,7 @@
 pandoc-quotes
 =============
 
-``pandoc-quotes`` is a filter for `pandoc <http://pandoc.org/>`_ that replaces
+``pandoc-quotes`` is a filter for `Pandoc <http://pandoc.org/>`_ that replaces
 plain, that is, non-typographic, quotation marks with typographic ones.
 
 You can define which typographic quotation marks to replace plain ones with
@@ -10,6 +10,10 @@ by setting either a document's ``quotation-marks``, ``quotation-language``,
 or ``lang`` metadata field. Typically, it should "just work".
 
 See the `manual page <man/pandoc-quotes.rst>`_ for more details.
+
+If you are using Pandoc 2.0 or newer, you will want to use 
+`pandoc-quotes.lua <https://github.com/odkr/pandoc-quotes.lua>`_ instead;
+it's easier to install and faster.
 
 
 Caveats

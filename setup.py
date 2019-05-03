@@ -61,9 +61,8 @@ METADATA = {
     'author': 'Odin Kroeger',
     'author_email': 'epnzdp@maskr.me',
     'license': 'MIT',
-    'python_requires': '>: 2.7, <4',
+    'python_requires': '>=2.7, <4',
     'packages': ['pandoc_quotes'],
-#      zip_safe: False,
     'install_requires': ['panflute', 'pyyaml'],
     'classifiers':      [
         'Development Status :: 4 - Beta',
@@ -74,7 +73,10 @@ METADATA = {
         'Topic :: Text Processing :: Filters'
         ],
     'scripts':          ['scripts/pandoc-quotes'],
-    'include_package_data': True
+    'include_package_data': True,
+    # I have yet to test whether the manual page installs
+    # if this is set to True.
+    'zip_safe': False
 }
 
 
