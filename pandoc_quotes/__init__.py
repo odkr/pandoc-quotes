@@ -24,11 +24,25 @@
 # Modules
 # =======
 
+
+import codecs
 from operator import itemgetter
 from os import path, name
+from itertools import chain
 
 from yaml import safe_load
 from panflute import Quoted, Str
+
+
+# Python3 Compatibility
+# =====================
+
+try:
+    basestring
+except NameError:
+    # pylint: disable=C0103
+    basestring = str
+
 
 # Constants
 # =========
@@ -230,18 +244,16 @@ def load_maps(map_files, encoding='utf-8'):
     """
     maps = {}
     for map_file in map_files:
-        # pylint: disable=E0602
-        if isinstance(map_file, file):
-            try:
+        try:
+            if not isinstance(map_file, basestring):
+                fname = map_file.name
                 maps.update(safe_load(map_file.read().decode(encoding)))
-            except UnicodeDecodeError:
-                raise QuoMarkNotPrintableError(file=map_file.name)
-        elif path.exists(map_file):
-            with open(map_file) as map_fh:
-                try:
-                    maps.update(safe_load(map_fh.read().decode(encoding)))
-                except UnicodeDecodeError:
-                    raise QuoMarkNotPrintableError(file=map_file)
+            elif path.exists(map_file):
+                fname = map_file
+                with codecs.open(map_file, encoding=encoding) as map_fh:
+                    maps.update(safe_load(map_fh.read()))
+        except UnicodeDecodeError:
+            raise QuoMarkNotPrintableError(file=fname)
     return maps
 
 
